@@ -1,0 +1,6 @@
+[
+  {"livroId":"SEED-001","titulo":"Dom Casmurro","autor":"Machado de Assis","quantidade":2,"preco":25.90,"ano":1899,"condicao":"Bom"},
+  {"livroId":"SEED-002","titulo":"Grande Sertão: Veredas","autor":"João Guimarães Rosa","quantidade":1,"preco":39.90,"ano":1956,"condicao":"Bom"},
+  {"livroId":"SEED-003","titulo":"O Alienista","autor":"Machado de Assis","quantidade":0,"preco":18.00,"ano":1882,"condicao":"Bom"},
+  {"livroId":"SEED-004","titulo":"Capitães da Areia","autor":"Jorge Amado","quantidade":0,"preco":28.00,"ano":1937,"condicao":"Bom"}
+]

@@ -1,0 +1,77 @@
+VERIFICAÇÃO LOCAL — AWS EMULADA; NÃO É RESULTADO DE DEPLOY OU ENTREGA SNS
+
+$ C:\Users\Enzo\Documents\Projects\SeboNaNuvem\.venv\Scripts\python.exe -m pytest tests -q --basetemp=C:\Users\Enzo\Documents\Projects\SeboNaNuvem\build\pytest --junitxml=build/pytest.xml
+ss...................................................................... [ 69%]
+................................                                         [100%]
+=========================== short test summary info ===========================
+SKIPPED [1] tests\e2e\test_live.py:46: Exige RUN_E2E=1 e deploy real verificado
+SKIPPED [1] tests\e2e\test_live.py:54: Cria estoque/interesse/venda e pode enviar e-mail; exige RUN_E2E_WRITES=1 adicional
+102 passed, 2 skipped in 50.73s
+
+Exit: 0
+
+$ node --test frontend/util.test.js
+✔ utilitários também são exportados no navegador e resolvem o origin real (9.9204ms)
+✔ markup mantém referências DOM válidas e não usa handlers ou HTML dinâmico (3.7783ms)
+✔ esc neutraliza os cinco caracteres HTML sem perder texto (0.3362ms)
+✔ moeda formata BRL e não transforma ausência ou infinito em preço (86.2504ms)
+✔ dt aceita ISO e rejeita data ausente ou inválida (19.4358ms)
+✔ cadastro valida quantidade inteira, preço finito e campos obrigatórios (2.4224ms)
+✔ solicitação exige livro e e-mail, normaliza e preserva nome opcional (0.3887ms)
+✔ API recusa configuração ausente e URL insegura antes da rede (2.0997ms)
+✔ API permite rotas locais no mesmo origin sem aceitar esquemas arbitrários (0.7899ms)
+✔ API monta query e POST JSON dos contratos (0.4408ms)
+✔ API comunica erro do servidor, rede/CORS e resposta inválida (1.408ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 257.0869
+
+Exit: 0
+
+$ node --check frontend/app.js
+
+Exit: 0
+
+$ node --check frontend/util.js
+
+Exit: 0
+
+$ bash scripts/run.sh package
+{
+  "LISTAR": "QZL3BUtuQT7X1YjIObRUjGDRquFtpqBWTcUcZAS1Iqg=",
+  "SOLICITAR": "Go20T/I0rhujtaa8RhGEx3BfEnbuy+i6J1YmX5Yckjw=",
+  "CADASTRAR": "o6GtPkAiUqZhlIc9d0KHNPjgKo4a+vBotDH08LcDZto=",
+  "EFETIVAR": "IzuOQ/2SWwt3ogYKbe2r2ekIH/KkpEhvJM6nj9suwp0=",
+  "LAYER": "RDTraCNUTUhisDHH8vmpSzZUGbbmCETdzbHwsjVX2cg="
+}
+
+Exit: 0
+
+$ bash -n deploy.sh
+
+Exit: 0
+
+$ bash -n seed.sh
+
+Exit: 0
+
+$ bash -n reset_dados.sh
+
+Exit: 0
+
+$ bash -n scripts/check_env.sh
+
+Exit: 0
+
+$ bash -n scripts/run.sh
+
+Exit: 0
+
+Parsing das fontes Python com gramática 3.12: OK. Execução local em Python 3.13.14.
+
+Resumo pytest real: {'tests': 104, 'failures': 0, 'errors': 0, 'skipped': 2, 'passed': 102}

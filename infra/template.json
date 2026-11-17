@@ -1,0 +1,578 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Sebo na Nuvem: somente recursos sebo-, LabRole preexistente. Nao executar sem autorizacao.",
+  "Parameters": {
+    "LabRoleArn": {
+      "Type": "String",
+      "AllowedPattern": "arn:aws:iam::[0-9]{12}:role/(?:[^/]+/)*LabRole",
+      "Description": "ARN da LabRole existente. Nenhum IAM sera criado."
+    },
+    "ArtifactBucket": {
+      "Type": "String",
+      "AllowedPattern": "sebo-[a-z0-9.-]+"
+    },
+    "LayerKey": {
+      "Type": "String"
+    },
+    "AllowedOrigins": {
+      "Type": "CommaDelimitedList",
+      "Default": "*"
+    },
+    "ListarKey": {
+      "Type": "String"
+    },
+    "SolicitarKey": {
+      "Type": "String"
+    },
+    "CadastrarKey": {
+      "Type": "String"
+    },
+    "EfetivarKey": {
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "Livros": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "TableName": "sebo-Livros",
+        "BillingMode": "PAY_PER_REQUEST",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "livroId",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "livroId",
+            "KeyType": "HASH"
+          }
+        ]
+      }
+    },
+    "Interesses": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "TableName": "sebo-Interesses",
+        "BillingMode": "PAY_PER_REQUEST",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "interesseId",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "livroId",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "status",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "interesseId",
+            "KeyType": "HASH"
+          }
+        ],
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "livroId-status-index",
+            "KeySchema": [
+              {
+                "AttributeName": "livroId",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "status",
+                "KeyType": "RANGE"
+              }
+            ],
+            "Projection": {
+              "ProjectionType": "ALL"
+            }
+          }
+        ]
+      }
+    },
+    "Vendas": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "TableName": "sebo-Vendas",
+        "BillingMode": "PAY_PER_REQUEST",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "vendaId",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "vendaId",
+            "KeyType": "HASH"
+          }
+        ]
+      }
+    },
+    "Notificacoes": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "sebo-notificacoes"
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "CommonLayer": {
+      "Type": "AWS::Lambda::LayerVersion",
+      "Properties": {
+        "LayerName": "sebo-common",
+        "Description": "Codigo compartilhado; sem SDK ou dependencias vendorizadas.",
+        "CompatibleRuntimes": [
+          "python3.12"
+        ],
+        "Content": {
+          "S3Bucket": {
+            "Ref": "ArtifactBucket"
+          },
+          "S3Key": {
+            "Ref": "LayerKey"
+          }
+        }
+      }
+    },
+    "Listar": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": "sebo-listar-livros",
+        "Role": {
+          "Ref": "LabRoleArn"
+        },
+        "Runtime": "python3.12",
+        "Handler": "app.lambda_handler",
+        "Timeout": 60,
+        "MemorySize": 256,
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ArtifactBucket"
+          },
+          "S3Key": {
+            "Ref": "ListarKey"
+          }
+        },
+        "Layers": [
+          {
+            "Ref": "CommonLayer"
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "TABELA_LIVROS": {
+              "Ref": "Livros"
+            },
+            "TABELA_INTERESSES": {
+              "Ref": "Interesses"
+            },
+            "TABELA_VENDAS": {
+              "Ref": "Vendas"
+            },
+            "SNS_TOPIC_ARN": {
+              "Ref": "Notificacoes"
+            }
+          }
+        }
+      }
+    },
+    "ListarUrl": {
+      "Type": "AWS::Lambda::Url",
+      "Properties": {
+        "TargetFunctionArn": {
+          "Fn::GetAtt": [
+            "Listar",
+            "Arn"
+          ]
+        },
+        "AuthType": "NONE",
+        "Cors": {
+          "AllowOrigins": {
+            "Ref": "AllowedOrigins"
+          },
+          "AllowMethods": [
+            "GET"
+          ],
+          "AllowHeaders": [
+            "content-type"
+          ],
+          "MaxAge": 300
+        }
+      }
+    },
+    "ListarUrlPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Listar"
+        },
+        "Action": "lambda:InvokeFunctionUrl",
+        "Principal": "*",
+        "FunctionUrlAuthType": "NONE"
+      }
+    },
+    "ListarInvokePermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Listar"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "*",
+        "InvokedViaFunctionUrl": true
+      }
+    },
+    "ListarLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/sebo-listar-livros",
+        "RetentionInDays": 14
+      }
+    },
+    "Solicitar": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": "sebo-solicitar-livro",
+        "Role": {
+          "Ref": "LabRoleArn"
+        },
+        "Runtime": "python3.12",
+        "Handler": "app.lambda_handler",
+        "Timeout": 60,
+        "MemorySize": 256,
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ArtifactBucket"
+          },
+          "S3Key": {
+            "Ref": "SolicitarKey"
+          }
+        },
+        "Layers": [
+          {
+            "Ref": "CommonLayer"
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "TABELA_LIVROS": {
+              "Ref": "Livros"
+            },
+            "TABELA_INTERESSES": {
+              "Ref": "Interesses"
+            },
+            "TABELA_VENDAS": {
+              "Ref": "Vendas"
+            },
+            "SNS_TOPIC_ARN": {
+              "Ref": "Notificacoes"
+            }
+          }
+        }
+      }
+    },
+    "SolicitarUrl": {
+      "Type": "AWS::Lambda::Url",
+      "Properties": {
+        "TargetFunctionArn": {
+          "Fn::GetAtt": [
+            "Solicitar",
+            "Arn"
+          ]
+        },
+        "AuthType": "NONE",
+        "Cors": {
+          "AllowOrigins": {
+            "Ref": "AllowedOrigins"
+          },
+          "AllowMethods": [
+            "POST"
+          ],
+          "AllowHeaders": [
+            "content-type"
+          ],
+          "MaxAge": 300
+        }
+      }
+    },
+    "SolicitarUrlPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Solicitar"
+        },
+        "Action": "lambda:InvokeFunctionUrl",
+        "Principal": "*",
+        "FunctionUrlAuthType": "NONE"
+      }
+    },
+    "SolicitarInvokePermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Solicitar"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "*",
+        "InvokedViaFunctionUrl": true
+      }
+    },
+    "SolicitarLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/sebo-solicitar-livro",
+        "RetentionInDays": 14
+      }
+    },
+    "Cadastrar": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": "sebo-cadastrar-livro",
+        "Role": {
+          "Ref": "LabRoleArn"
+        },
+        "Runtime": "python3.12",
+        "Handler": "app.lambda_handler",
+        "Timeout": 60,
+        "MemorySize": 256,
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ArtifactBucket"
+          },
+          "S3Key": {
+            "Ref": "CadastrarKey"
+          }
+        },
+        "Layers": [
+          {
+            "Ref": "CommonLayer"
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "TABELA_LIVROS": {
+              "Ref": "Livros"
+            },
+            "TABELA_INTERESSES": {
+              "Ref": "Interesses"
+            },
+            "TABELA_VENDAS": {
+              "Ref": "Vendas"
+            },
+            "SNS_TOPIC_ARN": {
+              "Ref": "Notificacoes"
+            }
+          }
+        }
+      }
+    },
+    "CadastrarUrl": {
+      "Type": "AWS::Lambda::Url",
+      "Properties": {
+        "TargetFunctionArn": {
+          "Fn::GetAtt": [
+            "Cadastrar",
+            "Arn"
+          ]
+        },
+        "AuthType": "NONE",
+        "Cors": {
+          "AllowOrigins": {
+            "Ref": "AllowedOrigins"
+          },
+          "AllowMethods": [
+            "POST"
+          ],
+          "AllowHeaders": [
+            "content-type"
+          ],
+          "MaxAge": 300
+        }
+      }
+    },
+    "CadastrarUrlPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Cadastrar"
+        },
+        "Action": "lambda:InvokeFunctionUrl",
+        "Principal": "*",
+        "FunctionUrlAuthType": "NONE"
+      }
+    },
+    "CadastrarInvokePermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Cadastrar"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "*",
+        "InvokedViaFunctionUrl": true
+      }
+    },
+    "CadastrarLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/sebo-cadastrar-livro",
+        "RetentionInDays": 14
+      }
+    },
+    "Efetivar": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": "sebo-efetivar-venda",
+        "Role": {
+          "Ref": "LabRoleArn"
+        },
+        "Runtime": "python3.12",
+        "Handler": "app.lambda_handler",
+        "Timeout": 60,
+        "MemorySize": 256,
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ArtifactBucket"
+          },
+          "S3Key": {
+            "Ref": "EfetivarKey"
+          }
+        },
+        "Layers": [
+          {
+            "Ref": "CommonLayer"
+          }
+        ],
+        "Environment": {
+          "Variables": {
+            "TABELA_LIVROS": {
+              "Ref": "Livros"
+            },
+            "TABELA_INTERESSES": {
+              "Ref": "Interesses"
+            },
+            "TABELA_VENDAS": {
+              "Ref": "Vendas"
+            },
+            "SNS_TOPIC_ARN": {
+              "Ref": "Notificacoes"
+            }
+          }
+        }
+      }
+    },
+    "EfetivarUrl": {
+      "Type": "AWS::Lambda::Url",
+      "Properties": {
+        "TargetFunctionArn": {
+          "Fn::GetAtt": [
+            "Efetivar",
+            "Arn"
+          ]
+        },
+        "AuthType": "NONE",
+        "Cors": {
+          "AllowOrigins": {
+            "Ref": "AllowedOrigins"
+          },
+          "AllowMethods": [
+            "POST"
+          ],
+          "AllowHeaders": [
+            "content-type"
+          ],
+          "MaxAge": 300
+        }
+      }
+    },
+    "EfetivarUrlPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Efetivar"
+        },
+        "Action": "lambda:InvokeFunctionUrl",
+        "Principal": "*",
+        "FunctionUrlAuthType": "NONE"
+      }
+    },
+    "EfetivarInvokePermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Efetivar"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "*",
+        "InvokedViaFunctionUrl": true
+      }
+    },
+    "EfetivarLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/sebo-efetivar-venda",
+        "RetentionInDays": 14
+      }
+    }
+  },
+  "Outputs": {
+    "ListarFunctionUrl": {
+      "Value": {
+        "Fn::GetAtt": [
+          "ListarUrl",
+          "FunctionUrl"
+        ]
+      }
+    },
+    "SolicitarFunctionUrl": {
+      "Value": {
+        "Fn::GetAtt": [
+          "SolicitarUrl",
+          "FunctionUrl"
+        ]
+      }
+    },
+    "CadastrarFunctionUrl": {
+      "Value": {
+        "Fn::GetAtt": [
+          "CadastrarUrl",
+          "FunctionUrl"
+        ]
+      }
+    },
+    "EfetivarFunctionUrl": {
+      "Value": {
+        "Fn::GetAtt": [
+          "EfetivarUrl",
+          "FunctionUrl"
+        ]
+      }
+    },
+    "SnsTopicArn": {
+      "Value": {
+        "Ref": "Notificacoes"
+      }
+    }
+  }
+}

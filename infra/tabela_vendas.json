@@ -1,0 +1,16 @@
+{
+  "TableName": "sebo-Vendas",
+  "BillingMode": "PAY_PER_REQUEST",
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "vendaId",
+      "AttributeType": "S"
+    }
+  ],
+  "KeySchema": [
+    {
+      "AttributeName": "vendaId",
+      "KeyType": "HASH"
+    }
+  ]
+}

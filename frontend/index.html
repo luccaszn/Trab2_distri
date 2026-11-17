@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#243d34">
+  <meta name="description" content="Encontre sua próxima leitura. Consulte o acervo, reserve um exemplar ou acompanhe a chegada de um livro.">
+  <title>Sebo na Nuvem — histórias em circulação</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23243d34'/%3E%3Ctext x='9' y='29' fill='%23f7f2e7' font-size='29' font-family='Georgia'%3Es%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js" defer></script>
+  <script src="util.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#conteudo">Ir para o conteúdo</a>
+  <header class="masthead shell">
+    <a class="brand" href="./" aria-label="Sebo na Nuvem, início"><span class="brand-mark" aria-hidden="true">s<span>n</span></span><span>Sebo na Nuvem<small>histórias em circulação</small></span></a>
+    <div class="edition">Livros usados.<br>Novos encontros.</div>
+  </header>
+  <div class="nav-bar"><nav class="shell tabs" aria-label="Área de acesso" role="tablist"><button id="tab-cliente" type="button" role="tab" aria-selected="true" aria-controls="cliente">Cliente</button><button id="tab-colaborador" type="button" role="tab" aria-selected="false" aria-controls="colaborador" tabindex="-1">Colaborador</button><span class="nav-note">Uma nova página começa aqui.</span></nav></div>
+  <main id="conteudo" class="shell">
+    <div id="local-banner" class="notice warning" role="status" hidden>Ambiente local emulado · dados em memória · nenhum e-mail real enviado</div>
+    <div id="config-alert" class="notice warning" role="alert" hidden></div>
+    <section id="cliente" role="tabpanel" aria-labelledby="tab-cliente">
+      <div class="intro"><div><p class="eyebrow">O ACERVO</p><h1>Seu próximo capítulo.</h1><p>Escolha um livro. Se ainda não chegou, deixe seu interesse.</p></div><span class="intro-seal" aria-hidden="true">de mão<br>em mão<span>↗</span></span></div>
+      <div class="client-layout">
+        <section class="catalogue" aria-label="Catálogo de livros">
+          <div class="toolbar"><label class="search"><span aria-hidden="true">⌕</span><input id="busca" type="search" placeholder="Buscar título, autor ou código" aria-label="Buscar no catálogo" maxlength="300"></label><button class="button subtle" id="atualizar-catalogo" type="button">Atualizar</button></div>
+          <div class="section-meta"><span id="catalogo-contagem">Aguardando acervo</span><span>título / autor</span></div>
+          <div id="catalogo-estado" class="notice" role="status" aria-live="polite"></div>
+          <div id="catalogo" class="book-grid"></div>
+        </section>
+        <aside class="order-panel"><p class="eyebrow">PARA A SUA ESTANTE</p><h2>Quero este livro</h2><div id="livro-selecionado" class="selected-book">Selecione um título no acervo ao lado.</div>
+          <form id="form-pedido"><label>Seu nome <span class="optional">opcional</span><input name="nomeCliente" autocomplete="name" maxlength="150" placeholder="Como podemos chamar você?"></label><label>E-mail<input name="emailCliente" type="email" autocomplete="email" required maxlength="254" placeholder="voce@exemplo.com"></label><p class="hint">Com estoque, reservamos um exemplar. Sem estoque, registramos seu interesse para a próxima chegada.</p><button class="button primary full" id="enviar-pedido" type="submit" disabled>Registrar pedido <span aria-hidden="true">↗</span></button></form><div id="pedido-resultado" class="notice" role="status" aria-live="polite" hidden></div><p class="fine-print">Se receber um pedido de confirmação de assinatura por e-mail, confirme-o para habilitar os avisos. Publicação aceita não garante entrega.</p>
+        </aside>
+      </div>
+    </section>
+    <section id="colaborador" role="tabpanel" aria-labelledby="tab-colaborador" hidden>
+      <div class="intro"><div><p class="eyebrow">BASTIDORES DO SEBO</p><h1>Cuidar de cada história.</h1><p>Registre chegadas, acompanhe interesses e conclua vendas.</p></div><button id="atualizar-gestao" class="button subtle" type="button">Atualizar dados</button></div>
+      <p class="access-note">Área operacional. Esta aba não é autenticação; o acesso aos serviços depende da configuração do ambiente.</p>
+      <div class="staff-layout">
+        <section class="entry-panel"><div class="panel-heading"><span class="eyebrow">01 / ENTRADA</span><h2>Mais livros na estante</h2></div><form id="form-cadastro">
+          <label>Livro existente<select id="livro-existente"><option value="">Novo título</option></select></label><p class="hint">Para uma chegada, selecione o título. A quantidade informada será somada ao estoque.</p>
+          <label>Título<input name="titulo" required maxlength="300"></label><label>Autor<input name="autor" required maxlength="300"></label>
+          <div class="form-pair"><label>Quantidade<input name="quantidade" type="number" min="1" step="1" value="1" required inputmode="numeric"></label><label>Preço (R$)<input name="preco" type="number" min="0" step="0.01" required inputmode="decimal" placeholder="0,00"></label></div>
+          <div class="form-pair"><label>Ano <span class="optional">opcional</span><input name="ano" type="number" min="1" step="1" inputmode="numeric"></label><label>Condição <span class="optional">opcional</span><input name="condicao" maxlength="100" placeholder="Ex.: bom estado"></label></div>
+          <button class="button primary full" type="submit">Registrar entrada <span aria-hidden="true">+</span></button>
+        </form><div id="cadastro-resultado" class="notice" role="status" aria-live="polite" hidden></div></section>
+        <div class="management"><section class="data-panel"><div class="panel-heading inline"><div><p class="eyebrow">02 / ESTOQUE</p><h2>Na estante</h2></div><span id="estoque-contagem" class="count">—</span></div><div id="estoque-estado" class="notice" role="status"></div><div id="estoque" class="table-wrap"></div></section>
+          <section class="data-panel"><div class="panel-heading inline"><div><p class="eyebrow">03 / INTERESSES</p><h2>Leitores à espera</h2></div><label class="filter-label">Status<select id="filtro-interesses"><option value="">Todos</option><option>PENDENTE</option><option>RESERVADO</option><option>VENDIDO</option></select></label></div><div id="venda-resultado" class="notice" role="status" aria-live="polite" hidden></div><div id="interesses-estado" class="notice" role="status" aria-live="polite"></div><div id="interesses" class="table-wrap"></div></section>
+          <section class="data-panel"><div class="panel-heading inline"><div><p class="eyebrow">04 / VENDAS</p><h2>Histórias que seguiram</h2></div><span id="vendas-total" class="count">—</span></div><div id="vendas-estado" class="notice" role="status"></div><div id="vendas" class="table-wrap"></div></section></div>
+      </div>
+    </section>
+  </main>
+  <footer class="shell footer"><span>Sebo na Nuvem</span><span>Todo livro merece outro leitor.</span></footer>
+  <noscript><p class="shell notice warning">Ative o JavaScript para consultar o acervo e registrar pedidos.</p></noscript>
+</body>
+</html>
