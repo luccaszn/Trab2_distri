@@ -427,7 +427,7 @@ def seed_data(client, confirm=False):
                 continue
             raise
         actual = client.get_item(TableName=name, Key={'livroId': item['livroId']}, ConsistentRead=True).get('Item')
-        if actual != item:
+        if actual != {k: {'N': str(Decimal(v['N']))} if 'N' in v else v for k, v in item.items()}:
             raise RuntimeError('Readback seed divergente; execute seed com a aplicação ociosa')
         created.append(source['livroId'])
     return {'created': bool(created), 'created_ids': created}
