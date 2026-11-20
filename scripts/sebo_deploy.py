@@ -412,7 +412,7 @@ def seed_data(client, confirm=False):
     if not confirm:
         raise ValueError('Seed exige --confirm (escrita AWS explícita)')
     from decimal import Decimal
-    from boto3.dynamodb.types import TypeSerializer
+    from boto3.dynamodb.types import TypeSerializer, TypeDeserializer
     from botocore.exceptions import ClientError
     serializer = TypeSerializer()
     items = json.loads((ROOT / 'infra' / 'livros_seed.json').read_text(encoding='utf-8'), parse_float=Decimal)
@@ -427,7 +427,7 @@ def seed_data(client, confirm=False):
                 continue
             raise
         actual = client.get_item(TableName=name, Key={'livroId': item['livroId']}, ConsistentRead=True).get('Item')
-        if actual != {k: {'N': str(Decimal(v['N']))} if 'N' in v else v for k, v in item.items()}:
+        if {k: TypeDeserializer().deserialize(v) for k, v in actual.items()} != source:
             raise RuntimeError('Readback seed divergente; execute seed com a aplicação ociosa')
         created.append(source['livroId'])
     return {'created': bool(created), 'created_ids': created}
